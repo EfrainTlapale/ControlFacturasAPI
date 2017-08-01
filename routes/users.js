@@ -6,18 +6,18 @@ const {secret} = require('../config')
 router.post('/signup', (req, res) => {
   const newUser = new User(req.body)
   newUser.save(err => {
-    err ? res.status(200).json(err) : res.json({success: true})
+    err ? res.json({err}) : res.json({success: true})
   })
 })
 
 router.post('/login', (req, res) => {
   User.findOne({username: req.body.username}, (err, user) => {
     if (err || !user) {
-      res.status(403).json({err: 'user not found'})
+      res.status(400).json({err: 'user not found'})
     } else {
       user.comparePassword(req.body.password, (err, isMatch) => {
-        if(err || !isMatch) {
-          res.status(403).json({err: 'auth failed'})
+        if (err || !isMatch) {
+          res.status(400).json({err: 'auth failed'})
         } else {
           user.password = undefined
           const token = jwt.sign(user, secret, {expiresIn: '8h'})
@@ -25,7 +25,12 @@ router.post('/login', (req, res) => {
         }
       })
     }
+  })
+})
 
+router.get('/users', (req, res) => {
+  User.find({}, (err, users) => {
+    err ? res.status(400).json({err}) : res.json({users: users.map(u => { u.password = undefined; return u })})
   })
 })
 

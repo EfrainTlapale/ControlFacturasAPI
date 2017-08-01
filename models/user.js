@@ -4,9 +4,15 @@ const bcrypt = require('bcryptjs')
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
+    required: true,
+    index: true,
+    unique: true
+  },
+  nombre: {
+    type: String,
     required: true
   },
-  role: {
+  rol: {
     type: String,
     required: true,
     enum: ['director', 'auxiliar']
@@ -17,21 +23,24 @@ const userSchema = new mongoose.Schema({
   }
 })
 
-userSchema.pre('save', function(next){
+userSchema.pre('save', function (next) {
   var user = this
   if (this.isModified('password') || this.isNew) {
-    bcrypt.hash(user.password, 8, function(err, hash) {
+    bcrypt.hash(user.password, 8, function (err, hash) {
       user.password = hash
       return next()
     })
-  }else{
+  } else {
     return next()
   }
 })
 
-userSchema.methods.comparePassword = function(password, cb){
+userSchema.plugin(require('mongoose-explain'))
+userSchema.plugin(require('mongoose-unique-validator'))
+
+userSchema.methods.comparePassword = function (password, cb) {
   bcrypt.compare(password, this.password, (err, isMatch) => {
-    if(err){
+    if (err) {
       return cb(err)
     } else {
       cb(null, isMatch)
